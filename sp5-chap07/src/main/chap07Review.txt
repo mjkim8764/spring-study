@@ -42,4 +42,89 @@
 
 
 4. Advice 의 종류
-    (1)
+    (1) Before Advice
+        대상 객체의 메서드 호출 전에 공통 기능 수행
+
+    (2) After Returning Advice
+        대상 객체의 메서드가 익셉션 없이 실행된 이후에 공통 기능 수행
+
+    (3) After Throwing Advice
+        대상 객체의 메서드 실행 중 Exception 이 발생할 때 공통 기능 수행
+
+    (4) After Advice
+        Exception 발생 여부 상관없이 대상 객체의 메서드 실행 후에 공통 기능 수행
+        (finally 와 비슷함)
+
+    (5) Around Advice
+        대상 객체의 메서드 실행 전, 후 또는 Exception 발생 시점에 공통 기능 수행
+
+
+5. 프록시 생성 방식
+
+    // MainAspect.java
+    RecCalculator cal = ctx.getBean("calculator", RecCalculator.class);
+
+    // AppCtx.java
+    @Bean
+    public Calculator calculator() {
+        return new RecCalculator();
+    }
+
+    MainAspect 클래스에서 RecCalculator 타입의 calculator 이름의 빈을 사용하도록 수정하였고,
+    AppCtx 에도 마찬가지로 RecCalculator 객체를 주입시켰다.
+
+    하지만 이렇게 바꾼 후 MainAspect.java 를 실행하면 Exception 이 발생한다.
+
+    Why?
+    스프링은 AOP 를 위한 프록시 객체를 생성할 때
+    실제 생성할 빈 객체가 인터페이스를 상속하면
+    인터페이스를 이용해서 프록시를 생성하기 때문 ! 실제 생성할 빈 객체를 이용하지 않는다.
+
+            <<Interface>>
+             Calculator
+                  |
+         ------------------
+         |                |
+      $Proxy17       RecCalculator
+
+    "calculator" 빈의 실제 타입이 Calculator 를 상속한 프록시 타입이기 때문에
+    RecCalculator 로 타입 변환을 할 수가 없다.
+
+    프록시 객체가 인터페이스가 아닌 클래스를 이용해서 프록시를 생성하고 싶을때
+    @EnableAspectJAutoProxy 의 proxyTargetClass 값에 true 를 넣어준다.
+
+    //AppCtx.java
+    ...
+    @Configuration
+    @EnableAspectJAutoProxy(proxyTargetClass = true)
+    public class AppCtx {
+        ...
+    }
+
+
+6. 한 Pointcut 에 여러 Advice 를 적용하고 싶을 때
+    AppCtxWithCache.java
+    @EnableAspectJAutoProxy 을 적용
+    @Aspect 가 CacheAspect, ExeTimeAspect 둘 다 있다.
+
+    사실 이럴 때 어떤 순서로 AOP 가 적용되는지는 제대로 이해하지 못하였지만,
+    @Order 로 순서를 적용시킬 수 있다.
+
+    // CacheAspect.java
+    @Aspect
+    @Order(1)
+    public class CacheAspect {
+        ...
+    }
+
+    // ExeTimeAspect.java
+    @Aspect
+    @Order(2)
+    public class ExeTimeAspect {
+        ...
+    }
+
+
+요약
+    - AOP 파트에서 이것저것 너무 세세하게 파고들려고 하지 말고, 지금은 예제의 코드가 어떻게 흘러가는지만 파악하자.
+    - 하지만 응집도를 높이기 위한 AOP 프로그래밍이 무엇인지 개념은 확실하게 잡아야 할 것이다.
