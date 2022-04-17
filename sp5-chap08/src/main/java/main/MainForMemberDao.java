@@ -67,7 +67,7 @@ public class MainForMemberDao {
         Member member = new Member(prefix + "@test.com", prefix, prefix, LocalDateTime.now());
 
         memberDao.insert(member);
-        logger.debug(member.getId() + "데이터 추가");
+        logger.debug(member.getId() + " 데이터 추가");
     }
 
 }
