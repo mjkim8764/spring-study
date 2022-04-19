@@ -12,3 +12,101 @@
         3. 커넥션 풀에 커넥션을 다시 반환하면 유휴(idle) 상태. close()
 
 
+2. 트랜잭션
+    보통 DB 공부를 할 때 트랜잭션을
+    "쪼갤 수 없는 업무 처리의 최소 단위"
+    "DB의 상태를 변화시키기 위해 수행하는 작업의 단위"
+
+    라고 얘기를 하는데, 그렇다고 해서
+    쿼리의 한 문장 한 문장이 각각 다른 트랜잭션이 아니라는 것에 주의해야 한다.
+
+    트랜잭션은 쿼리 두 문장을 하나의 트랜잭션으로 얘기할 수도 있고,
+    쿼리 세 문장을 하나의 트랜잭션으로 얘기할 수도 있다.
+    즉, 사람이 정하기 나름이라는 것이다.
+
+    우리가 얘기하는 트랜잭션의 커밋(Commit)과 롤백(Rollback)은
+    하나의 트랜잭션에 묶인 쿼리 실행결과"들"을
+    DB에 실제 반영(커밋), 되돌리기(롤백)
+    이라고 인지해야 한다.
+
+3. 스프링에서의 트랜잭션 처리
+    (1) @Transactional 으로 트랜잭션 범위를 쉽게 지정할 수 있다.
+
+    (2) @Transactional 이 동작하기 위해 추가해야 할 설정은 아래와 같다.
+        - @Transactional 활성화 설정
+        - 플랫폼 트랜잭션 매니저(PlatformTransactionManager) 빈 설정
+
+    (3) 플랫폼 트랜잭션 매니저는 스프링이 제공하는 트랜잭션 메니저 인터페이스다.
+    그리고 JDBC 는 DataSourceTransactionManager 클래스를 PlatformTransactionManager
+    로 사용한다.
+
+    빈 설정 클래스에 @EnableTransactionManagement 를 붙인 후,
+    트랜잭션 매니저 객체를 주입하는 빈 객체를 만들어주면 된다.
+    (AppCtx.java 참고)
+
+4. @Transactional & 프록시
+    @Transactional 어노테이션을 적용하기 위해 @EnableTransactionManagement 을 사용하면
+    스프링은 @Transactional 어노테이션이 적용된 빈 객체를 찾은 뒤 알맞은 프록시 객체를 생성한다.
+
+5. Rollback 에 관하여
+    별도의 설정을 하지 않으면 발생한 Exception 이 RuntimeException 일 때
+    트랜잭션을 롤백한다. WrongIdPasswordException 클래스 등을 구현할 때
+    RuntimeException 을 상속받도록 한 이유가 트랜잭션 롤백을 염두에 두었기 때문.
+
+    JdbcTemplate 은 DB 연동 과정에 문제가 있으면 DataAccessException 을 발생
+    DataAccessException 역시 RuntimeException 을 상속받고 있기 때문에
+    JdbcTemplate 의 기능을 실행하는 도중 Exception 이 발생해도
+    프록시는 트랜잭션을 롤백함.
+
+    하지만 SQLException 은 RuntimeException 을 상속하고 있지 않으므로
+    SQLException 이 발생했을 때도 롤백 하고 싶다면 rollbackFor 속성을 사용한다.
+
+6. @Transactional 의 주요 속성
+    value (String 타입) - 트랜잭션을 관리할 때 사용할 PlatformTransactionManager 빈의 이름을 지정. 기본값은 " "
+    propagation (Propagation 타입) - 트랜잭션 전파 타입을 지정. 기본값은 Propagation.REQUIRED
+    isolation (Isolation 타입) - 트랜잭션 격리 레벨을 지정. 기본값은 Isolation.DEFAULT
+    timeout (int 타입) - 트랜잭션 제한 시간을 지정. 기본값은 -1 로 이 경우 DB의 타임아웃 시간을 사용한다. 초 단위로 지정.\
+
+7. Propagation 열거 타입의 주요 값
+    REQUIRED : 메서드를 수행하는 데 트랜잭션이 필요하다는 것을 의미.
+    (중요)      현재 진행 중인 트랜잭션이 존재하면 해당 트랜잭션을 사용. 존재하지 않으면 새 트랜잭션을 생성
+
+    MANDATORY : 메서드를 수행하는 데 트랜잭션이 필요하다는 것을 의미.
+                하지만 REQUIRED 와 달리 진행 중인 트랜잭션이 없다면 Exception 발생
+
+    REQUIRES_NEW : 현재 진행 중인 트랜잭션의 존재 여부와 상관없이 항상 새로운 트랜잭션을 시작한다.
+    (중요)          만약 진행 중인 트랜잭션이 존재하면 기존 트랜잭션을 일시 중지하고 새로운 트랜잭션을 시작한다.
+                   새로 시작된 트랜잭션이 종료된 뒤에 기존 트랜잭션이 계속됨.
+
+    SUPPORTS : 메서드가 트랜잭션을 필요로 하지는 않지만, 진행 중인 트랜잭션이 존재하면 트랜잭션을 사용함.
+               진행 중인 트랜잭션이 존재하지 않더라고 메서드 정상 동작
+
+    NOT_SUPPORTED : 메서드가 트랜잭션을 필요로 하지 않음.
+                    진행 중인 트랜잭션이 존재할 경우 메서드가 실행되는 동안 트랜잭션은 일시 중지
+                    메서드가 종료된 후에 트랜잭션을 계속 진행
+
+    NEVER : 메서드가 트랜잭션을 필요로 하지 않음. 진행 중인 트랜잭션이 존재하면 Exception 발생
+
+    NESTED : 진행 중인 트랜잭션이 존재하면 기존 트랜잭션에 중첩된 트랜잭션에서 메서드를 실행
+             진행 중인 트랜잭션이 존재하지 않으면 REQUIRED 와 동일하게 동작.
+             JDBC 3.0 드라이버를 사용할 때에만 적용 (혹은 JTA Provider 가 이 기능을 지원할 경우)
+
+
+8. Isolation 열거 타입에 정의된 값
+    DEFAULT : 기본 설정
+
+    READ_UNCOMMITTED : 다른 트랜잭션이 커밋하지 않은 데이터를 읽을 수 있음.
+
+    READ_COMMITTED : 다른 트랜잭션이 커밋한 데이터를 읽을 수 있음.
+
+    REPEATABLE_READ : 처음에 읽어 온 데이터와 두 번째 읽어 온 데이터가 동일한 값을 가짐.
+
+    SERIALIZABLE : 동일한 데이터에 대해서 동시에 두 개 이상의 트랜잭션을 수행할 수 없음.
+
+    격리 설정은 초보 개발자는 함부로 건들지 말 것에 주의
+
+9. @EnableTransactionManagement 어노테이션의 주요 속성
+    proxyTargetClass : 클래스를 이용해서 프록시를 생성할지 여부를 지정함. 기본값은 false, 인터페이스를 이용해서 프록시를 생성
+    order : AOP 적용 순서를 지정함. 기본값은 제일 낮은 순위 (int 의 최대 값)
+
+

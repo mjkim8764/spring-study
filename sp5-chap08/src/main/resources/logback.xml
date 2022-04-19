@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8" ?>
+
 <configuration scan="true" scanPeriod="3 seconds">
     <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
         <layout>
@@ -8,10 +9,12 @@
         </layout>
     </appender>
 
-    <logger name="org.springframework" level="INFO" />
-
-    <root level="TRACE">
-        <appender-ref ref="console"/>
+    <root level="INFO">
+        <appender-ref ref="console" />
     </root>
+
+    <logger name="org.springframework" level="DEBUG" />
+
+
 </configuration>
 
