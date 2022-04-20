@@ -15,3 +15,16 @@
 
 + chap05 : 컴포넌트 스캔
   + Component 어노테이션 학습
+
++ chap06 : 빈 라이프사이클과 범위
+
++ chap07 : AOP 프로그래밍
+  + 프록시 패턴
+  + Aspect, Pointcut, Around 어노테이션 간단 학습
+
++ chap08 : DB 연동
+  + JdbcTemplate을 이용한 DB 연결 테스트
+  + Transactional 어노테이션 학습
+
++ chap09 : 스프링 MVC 설정 및 테스트
+
