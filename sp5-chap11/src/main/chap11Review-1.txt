@@ -1,0 +1,41 @@
+chap11 요약
+    앞서 chap08에서 작성하였던 DB 연동 예제 코드에
+    MVC 의 기본적인 기능 구현을 하였음 (컨트롤러 & 뷰 구현)
+
+
+프로젝트 생성 과정에서 있었던 이슈들 정리
+    1. 테스트 index.jsp 파일을 보기 위해 톰캣 서버 실행하였으나,
+    web.xml 에 정의한 ContextLoaderListener 를 찾을 수 없다고 나옴.
+
+    -> Tomcat Localhost log 를 확인하니 ContextLoaderListener 클래스를 찾을 수 없다고 했다(ClassNotFoundException)
+    -> pom.xml 에서 의존도 확인하고
+    -> Add Framework support 에서 lib 로 추가했던 스프링 MVC 모듈들과 pom.xml 에서 디펜던시로 추가한
+    것들이 충돌났나 싶어서 외부 라이브러리 이외의 것들을 모두 지웠음
+
+    해결했던 방법 -> pom.xml 에 <packaging>war</packaging> 을 넣으니 해결
+
+    이슈를 재현하고자 해당 문구를 지우고 다시 서버를 실행했는데 에러가 왜 나지 않는지는 모르겠음.
+    원인 분석이 잘못 되었을 가능성 있음.
+
+
+    2. logback 한글 깨짐
+    resources 폴더의 logback.xml 에서
+    encoder 태그를 따로 만들어서 charset 을 UTF-8 로 설정하여야 했음. 해결
+
+
+
+이번 챕터에서 실습하였던 내용을 목차로 정리
+    1. 컨트롤러에서 요청 매핑 어노테이션을 이용한 경로 매핑
+    (@GetMapping, @PostMapping)
+
+    2. 웹 브라우저(jsp) 에서 받은 요청 파라미터를 매핑 컨트롤러에서 받아 서비스로 보냄
+    (서비스는 앞선 챕터들에서 구현이 되어 있는 상태)
+
+    3. 리다이렉트 처리 (RegisterController 의 handleStep2 메서드)
+
+    4. @RequestParam 을 이용하여 값을 받는 것 외에 jsp 에서 form 에 입력한 값을
+    커맨드 객체로 전달받아 사용하였음. (RegisterController 의 handleStep3 메서드)
+
+    5. 4에 맞춰 뷰 JSP 코드(step2.jsp) 에서도 스프링 폼 연동을 이용하여 커맨드 객체를 사용하였음.
+
+    6. 컨트롤러 구현이 없는 경로 매핑을 하였음. (step3.jsp, MvcConfig 클래스의 addViewControllers 메서드)
