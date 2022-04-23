@@ -1,0 +1,66 @@
+chap11 요약 (2)
+
+다른 컨트롤러와 뷰 페이지를 만들어서 실습.
+(survey package 의 컨트롤러, survey 뷰)
+
+
+1. 커맨드 객체가
+    (1) 리스트 타입의 프로퍼티를 가졌거나
+    (2) 중첩 프로퍼티를 가진 경우에도
+    스프링 MVC 는 값을 알맞게 커맨드 객체에 설정해줌.
+
+    뷰 (surveyForm.jsp) 의 responses[0], responses[1], ... , res.location, res.age 가
+    컨트롤러 (SurveyController) 의 submit 메서드의 AnsweredData 타입의 데이터와 매핑이 되는 것을 알 수 있다.
+
+
+2. 질문들을 보여주는 뷰 (surveyForm.jsp) 를 다시 보면 jsp 파일에 설문 항목이 하드코딩 되어 있다.
+이를 컨트롤러 (SurveyController) 에서  모델 생성 -> addAttribute  해서 뷰에 전달하였다.
+그에 맞게 뷰 (surveyForm.jsp) 코드도 jstl 라이브러리를 사용한 코드로 변경하였다.
+
+
+3. 2번에서 컨트롤러는
+    (1) Model 을 이용해서 뷰에 전달할 데이터 설정
+    (2) 결과를 보여줄 뷰 이름을 리턴
+
+    했었는데 ModelAndView 를 사용하여 두 가지를 한 번에 처리하였다.
+
+
+4. 스프링 MVC 에서 HTML 폼과 커맨드 객체를 연동하기 위해
+ JSP taglib 를 제공한다. 아래는 리스트
+
+    (1) form 관련 -> <form:form>
+        - action
+        - enctype
+        - method
+
+    (2) input 관련 -> <form:input>, <form:password>, <form:hidden>
+
+    (3) select 관련 -> <form:select>, <form:options>, <form:option>
+
+    (4) checkbox 관련 -> <form:checkboxes>, <form:checkbox>
+
+    (5) radiobutton 관련 -> <form:radiobuttons>, <form:radiobutton>
+
+    (6) textarea 관련 -> <form:textarea>
+
+    (7) CSS 및 HTML 태그와 관련된 공통 속성
+        <form:input>, <form:select> 등 입력 폼과 관련해서 제공하는 스프링 커스텀 태그는
+        HTML 의 CSS 및 이벤트 관련 속성을 제공하고 있음.
+
+        CSS
+            + cssClass : HTML 의 class 속성값
+            + cssErrorClass : 폼 검증 에러가 발생했을 때 사용할 HTML 의 class 속성값
+            + cssStyle : HTML 의 style 속성값
+
+        HTML
+            + id, title, dir
+            + disabled, tabindex
+            + onfocus, onblur, onchange
+            + onclick, ondblclick
+            + onkeydown, onkeypress, onkeyup
+            + onmousedown, onmousemove, onmouseup
+            + onmouseout, onmouseover
+
+        또한 각 커스텀 태그는 htmlEscape 속성을 사용해서
+        커맨드 객체의 값에 포함된 HTML 특수 문자를 엔티티 레퍼런스로 변환할지를 결정할 수 있다.
+
