@@ -1,0 +1,155 @@
+<label>이메일</label>
+<input type="text" name="email">
+
+이렇게 코딩되어 있는 JSP 가 있다고 하자.
+"이메일" 을 "이메일 주소" 라던지 "E-mail" 로 변경하기로 했다고 하면
+각 폼을 출력하는 JSP 를 모두 찾아서 변경해야 해서 번거로울 것이다.
+
+이를 위해 다음 작업을 하였다.
+    - 문자열을 담은 메시지 파일 작성
+    - 메시지 파일에서 값을 읽어오는 MessageSource 빈 설정
+    - JSP 코드에서 <spring:message> 태그를 사용해서 메시지 출력
+
+
+label.properties 에서
+register.done=<strong>{0}님 ({1})</strong>, 회원 가입을 완료했습니다.
+위 코드와 같은 메시지를 사용하려면 두 개 이상의 값을 전달해야 한다. 이 경우는 아래 방법들 중 하나를 선택
+    - 콤마로 구분한 문자열
+    - 객체 배열
+    - <spring:argument> 태그 사용
+
+
+커맨드 객체의 값 검증과 에러 메시지 처리
+    지금까지 작성한 회원 가입 처리 코드에는 다음과 같은 문제들이 있다.
+    1. 올바르지 않은 이메일 주소를 입력해도 가입 처리가 됨. 이름을 입력하지 않아도 가입할 수 있음.
+    즉 입력한 값에 대한 검증 처리를 하지 않음.
+    2. 중복된 주소를 입력해서 다시 폼을 보여줄 때 왜 가입에 실패했는지 이유를 알려주지 않음.
+
+    이런 값 검증과 에러 메시지 처리는 절대 간과해서는 안 된다.
+
+    스프링에서는 이 두 가지 문제를 처리하기 위해 아래와 같은 방법을 제공하고 있다.
+    1. 커맨드 객체를 검증하고 결과를 에러 코드로 저장
+    2. JSP 에서 에러 코드로부터 메시지를 출력
+
+
+
+Validator 인터페이스
+
+public interface Validator {
+    boolean supports(Class<?> aClass);
+    void validate(Object target, Errors errors);
+}
+
+    1. support() : Validator 가 검증할 수 있는 타입인지 검사
+    2. validate() : target 을 검증하고 오류 결과를 Errors 에 담음.
+
+
+Errors 인터페이스가 제공하는 에러 코드 추가 메서드
+    - reject(String errorCode)
+    - reject(String errorCode, String defaultMessage)
+    - reject(String errorCode, Object[] errorArgs, String defaultMessage)
+    - rejectValue(String field, String errorCode)
+    - rejectValue(String field, String errorCode, String defaultMessage)
+    - rejectValue(String field, String errorCode, Object[] errorArgs, String defaultMessage)
+
+    reject() 메서드는 rejectValue() 와 다르게 객체 자체에 에러 코드를 추가한다.
+    이렇게 커맨드 객체 자체가 잘못된 경우를 "글로벌 에러" 라고 한다.
+
+
+이렇게 자바 코드에서 에러 코드를 설정하면
+해당 에러 코드에 따른 에러 메시지를 JSP 에서 <form:errors> 태그로 출력할 수 있다.
+상세 에러 메시지는 properties 파일에 작성하면 된다.
+
+예를 들어 errors.rejectValue("email", "required") 코드로
+"email" 프로퍼티에 "required" 에러 코드를 추가했고 커맨드 객체의 이름이 "registerRequest" 라면
+아래의 순서대로 메시지 코드를 검색하고, 이 중 먼저 검색되는 메시지 코드를 출력한다.
+    1. required.registerRequest.email
+    2. required.email
+    3. required.String
+    4. required
+
+
+글로벌 범위 Validator 와 컨트롤러 범위 Validator
+    1. 글로벌 범위 Validator (@Valid 어노테이션)
+        글로벌 범위 Validator 를 적용하려면 다음 두 가지를 설정해야 한다.
+        (1) 설정 클래스에서 WebMvcConfigurer 의 getValidator() 메서드가 Validator 구현 객체를 리턴하도록 함.
+        (MvcConfig 클래스에서 이를 구현하였음)
+
+        (2) 글로벌 범위 Validator 가 검증할 커맨드 객체에 @Valid 어노테이션 사용
+        @Valid 어노테이션은 Bean Validation API 에 포함되어 있기 때문에 이를 사용하려면
+        디펜던시 설정을 해야 한다.
+        (RegisterRequest 타입 커맨드 객체를 사용하는 handleStep3() 메서드에 @Valid 추가하였음)
+
+        @Valid 사용시 주의해야 할 점 : Errors 타입 파라미터가 없으면 검증 실패 시 400 에러 발생
+
+        예제에서는 글로벌 범위 Validator 로 RegisterRequestValidator 클래스를 반환했는데
+        이는 모든 컨트롤러에 적용할 수 있는 글로벌 범위 Validator 로서는 사실 적합하지 않다.
+        스프링 MVC 는 자체적으로 제공하는 글로벌 Validator 가 존재하고 이를 사용하면
+        Bean Validation 이 제공하는 어노테이션을 이용해서 값을 검증할 수 있다.
+
+    2. @InitBinder 어노테이션을 이용한 컨트롤러 범위 Validator
+        WebDataBinder#setValidator 메서드를 이용해서 컨트롤러 범위에 적용할 Validator 를 설정할 수 있다.
+
+        RegisterController 에 정의한 initBinder 메서드에서
+        RegisterRequestValidator 를 컨트롤러 범위 Validator 로 설정하였기 때문에
+        @Valid 어노테이션을 붙인 RegisterRequest 를 검증할 때 이 Validator 를 사용하게 된다.
+
+       @InitBinder 가 붙은 메서드는 컨트롤러의 요청 처리 메서드를 실행하기 전에 매번 실행된다.
+       즉, 예제 코드의 handleStep1, handleStep2, handleStep3 메서드를 실행하기 전에
+       initBinder() 메서드를 매번 호출해서 WebDataBinder 를 초기화한다.
+
+
+Bean Validation 을 이용한 검증 처리
+    앞에서 봤던 @Valid 는 Bean Validation 에 정의되어 있다.
+    여기에는 @Valid 뿐만 아니라 @NotNull, @Digits, @Size 등의 어노테이션도 정의하고 있다.
+    이것들을 사용하면 Validator 작성 없이 어노테이션만으로 커맨드 객체의 값 검증을 처리할 수 있다.
+
+    Bean Validation 을 적용하려면 앞서 적용했던 validation-api 모듈을 구현한
+    프로바이더를 디펜던시로 추가해야 한다. 여기서는 Hibernate Validator 를 pom.xml 에 추가하였고,
+    RegisterRequest 클래스의 멤버 변수들에게 @NotBlank, @Email, @NotEmpty 등의 어노테이션을 추가하였다.
+
+    (라고 교재에 나와 있지만 JSR 380(Bean Validation 2.0) 문서를 보면
+     @NotBlack, NotEmpty, @Email 등이 2.0 이 되면서 새로 built-in 되었기 때문에
+     org.hibernate.validator.constraints.* 를 import 할 필요가 없다)
+
+     참고 : https://beanvalidation.org/2.0-jsr380/
+
+
+    어노테이션을 사용했다면 그 다음으로는
+    Bean Validation 어노테이션을 적용한 커맨드 객체를 검증할 수 있는
+    OptionalValidatorFactoryBean 클래스를 빈으로 등록해야 한다.
+    (이는 @EnableWebMvc 어노테이션을 사용하면 글로벌 Validator 로 등록하기 때문에
+    추가로 설정할 것은 없다)
+
+    그런데 위의 실습에서 MvcConfig 클래스에서 getValidator 메서드를 활용하여
+    글로벌 Validator 로 RegisterRequestValidator 를 설정하였다.
+    이렇게 임의로 설정하면 OptionalValidatorFactoryBean 을 글로벌로 사용하지 않기 때문에
+    주의해야 한다.
+    (OptionalValidatorFactoryBean 을 글로벌로 사용하기 위해
+    MvcConfig#getValidator, RegisterController#InitBinder 메서드를 주석처리 하였다.)
+
+    그리고 Bean Validation 어노테이션을 사용함에 따라
+    label.properties 에 설정하였던 에러 메시지도 변경하면 된다.
+    ( ex: NotBlank, NotEmpty, Size.password, Email 등 )
+    설정하지 않으면 기본으로 제공하는 에러 메시지가 출력된다.
+    프로퍼티 파일에 설정하지 않고 어노테이션에 속성값으로 바로 적어줘도 된다.
+
+
+Bean Validation 의 주요 어노테이션
+    @AssertTrue, @AssertFalse
+    @DecimalMax, @DecimalMin
+    @Max @Min
+    @Digits
+    @Size
+    @Null, @NotNull
+    @Pattern
+    여기까지 Bean Validation 1.1
+
+    @NotEmpty
+    @NotBlank
+    @Positive, @PositiveOrZero
+    @Negative, @NegativeOrZero
+    @Email
+    @Future, @FutureOrPresent
+    @Past, @PastOrPresent
+
