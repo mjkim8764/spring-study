@@ -1,0 +1,46 @@
+chap12 에 이어서 로그인 페이지를 구현
+controller -> LoginCommand (커맨드 객체)
+              LoginCommandValidator (Validator)
+              LoginController (매핑해 주는 컨트롤러)
+
+spring -> AuthInfo
+          AuthService
+
+view/login -> loginForm.jsp
+              loginSuccess.jsp
+
+
+여기까지는 chap12 에서 한 것과 다르지 않음.
+하지만 제일 중요한 로그인 상태 유지가 빠져 있다.
+로그인 상태를 유지하는 방법은 크게 두 가지가 있다.
+    - HttpSession
+    - Cookie
+
+
+1. HttpSession 사용
+    컨트롤러에서 HttpSession 을 사용하려면 아래 두 가지 중 하나를 사용하면 된다.
+
+    - 요청 매핑 어노테이션 적용 메서드에 HttpSession 파라미터 추가
+    - 요청 매핑 어노테이션 적용 메서드에 HttpServletRequest 파라미터를 추가하고
+    HttpServletRequest 를 이용해서 HttpSession 을 구한다.
+
+    첫 번째 방법은 항상 HttpSession 을 생성한다. (메서드의 파라미터로 HttpSession 을 생성해 두기 때문)
+    두 번째 방법은 필요할 시점에 HttpServletRequest#getSession 메서드로 세션을 생성한다.
+
+
+    (1) 파라미터로 HttpSession 추가
+    -> LoginController 클래서의 submit 메서드에 HttpSession 파라미터를 추가하고,
+    이 후 아래처럼 "authInfo" 속성에 인증 정보 객체(authInfo) 를 저장하도록 하였음.
+    -> session.setAttribute("authinfo", authInfo);
+
+    이 후 로그아웃은 HttpSession 을 제거해야 하는데, 이를 위해 따로 컨트롤러(LogoutController)를 만들고
+    -> session.invalidate();
+
+    session 이 존재하는지 아닌지에 따라 출력을 다르게 하는 부분을 main.jsp 에 추가.
+
+
+
+
+
+
+
