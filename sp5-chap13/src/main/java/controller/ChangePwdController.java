@@ -1,7 +1,5 @@
-package config;
+package controller;
 
-import controller.ChangePwdCommand;
-import controller.ChangePwdCommandValidator;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,6 +11,7 @@ import spring.ChangePasswordService;
 import spring.WrongIdPasswordException;
 
 import javax.servlet.http.HttpSession;
+import javax.validation.Valid;
 
 @Controller
 @RequestMapping("edit/changePassword")
@@ -34,7 +33,7 @@ public class ChangePwdController {
     public String submit(
             @ModelAttribute("command") ChangePwdCommand pwdCmd,
             Errors errors, HttpSession session) {
-        new ChangePwdCommandValidator().validate(pwdCmd, errors);
+        // new ChangePwdCommandValidator().validate(pwdCmd, errors);
         if(errors.hasErrors()) {
             return "edit/changePwdForm";
         }

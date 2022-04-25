@@ -17,7 +17,7 @@ view/login -> loginForm.jsp
     - Cookie
 
 
-1. HttpSession 사용
+HttpSession 사용
     컨트롤러에서 HttpSession 을 사용하려면 아래 두 가지 중 하나를 사용하면 된다.
 
     - 요청 매핑 어노테이션 적용 메서드에 HttpSession 파라미터 추가
@@ -40,7 +40,66 @@ view/login -> loginForm.jsp
 
 
 
+Interceptor
+    여기까지 작업한 것에서 로그인하지 않은 상태로 changePassword 주소를
+    브라우저에서 입력하면 비밀번호 변경 폼이 출력이 된다.
+    하지만 로그인이 되지 않은 상태에서 비밀번호 변경 폼이 출력이 되는 것은 이상하기 때문에
+    세션을 확인하여 존재하지 않으면 로그인 경로로 리다이렉트하도록 ChangePwdController 클래스를
+    수정하도록 할 수 있다.
+
+    하지만 실제 웹 어플리케이션에서는 비밀번호 변경 기능 외에 더 많은 곳에서도 로그인 여부를 확인해야 한다.
+    즉, 각 기능을 구현한 컨트롤러 코드마다 세션 확인 코드를 삽입해야 되는데 이는 많은 중복을 일으킨다.
+
+    이렇게 다수의 컨트롤러에 대해 동일한 기능을 적용해야 할 때 HandlerInterceptor 를 사용한다.
 
 
+    Interceptor 인터페이스를 사용하면 다음의 세 시점에 공통 기능을 넣을 수 있다.
+        - 컨트롤러(핸들러) 실행 전
+        - 컨트롤러(핸들러) 실행 후, 아직 뷰를 실행하기 전
+        - 뷰를 실행한 이후
 
+    각 시점을 처리하기 위해 HandlerInterceptor 인터페이스는 다음 메서드를 정의하고 있다.
+
+    boolean preHandle(
+        HttpServletRequest request,
+        HttpServletResponse response,
+        Object handler) throws Exception;
+
+    void postHandle(
+        HttpServletRequest request,
+        HttpServletResponse response,
+        Object handler,
+        ModelAndView modelAndView) throws Exception;
+
+    void afterCompletion(
+        HttpServletRequest request,
+        HttpServletResponse response,
+        Object Handler,
+        Exception ex) throws Exception;
+
+    preHandle() 메서드는 컨트롤러(핸들러) 객체를 실행하기 전에 필요한 기능을 구현할 때 사용한다.
+    파라미터로 쓰는 handler 는 웹 요청을 처리한 컨트롤러(핸들러) 객체이다.
+    preHandle 메서드에서 하는 작업은 다음과 같다.
+        - 로그인하지 않은 경우 컨트롤러를 실행하지 않음.
+        - 컨트롤러를 실행하기 전에 컨트롤러에서 필요로 하는 정보를 생성
+    반환값 타입이 boolean 인데 false 를 리턴하면 컨트롤러(혹은 다음 HandlerInterceptor)를 실행하지 않는다.
+
+    postHandle() 메서드는 컨트롤러(핸들러) 가 정상적으로 실행된 이후 추가 기능을 구현할 때 사용함.
+    컨트롤러가 익셉션을 발생하면 postHandle() 메서드는 실행하지 않음.
+    뷰에 응답을 보내기 전에 실행된다.
+
+    afterCompletion() 메서드는 뷰가 클라이언트에 응답을 전송한 뒤에 실행함.
+    컨트롤러 실행 과정에서 익셉션이 발생하면 네 번째 파라미터로 전달함.
+    익셉션이 발생하지 않을때 파라미터 값은 null
+    즉, 이 메서드는 컨트롤러 실행하면서 생기는 Exception 을 로그로 남긴다거나
+    실행 시간을 기록하는 등의 후처리를 하기에 적합한 메서드이다.
+
+
+HandlerInterceptor 구현 및 설정
+    1. HandlerInterceptor 구현
+        여기서는 HandlerInterceptor 인터페이스를 구현하는
+        AuthCheckInterceptor 클래스를 만들어 preHandle 메서드를 오버라이딩하였다.
+
+    2. 구현을 했으면 어디에 적용할지 설정해야 한다.
+        이는 MvcConfig 설정 클래스에 추가하였다.
 

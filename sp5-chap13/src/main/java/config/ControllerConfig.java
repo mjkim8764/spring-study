@@ -1,5 +1,6 @@
 package config;
 
+import controller.ChangePwdController;
 import controller.LoginController;
 import controller.LogoutController;
 import controller.RegisterController;

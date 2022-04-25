@@ -28,8 +28,8 @@ public class RegisterController {
 
 
     @PostMapping("/register/step2")
-    public String handleStep2(Model model,
-                              @RequestParam(value = "agree", defaultValue = "false") Boolean agree) {
+    public String handleStep2(@RequestParam(value = "agree", defaultValue = "false") Boolean agree,
+                              Model model) {
         if(!agree) {
             return "register/step1";
         }

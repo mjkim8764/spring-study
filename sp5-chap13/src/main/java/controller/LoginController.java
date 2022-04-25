@@ -27,7 +27,7 @@ public class LoginController {
 
     @PostMapping
     public String submit(LoginCommand loginCommand, Errors errors, HttpSession session) {
-        new LoginCommandValidator().validate(loginCommand, errors);
+        // new LoginCommandValidator().validate(loginCommand, errors);
         if(errors.hasErrors()) {
             return "login/loginForm";
         }
