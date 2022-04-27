@@ -1,0 +1,33 @@
+chap13 코드에서 추가한 부분
+    1. 특정 기간에 가입했던 회원 정보 출력
+        (1) MemberDao 에서 쿼리 결과를 가져오는 selectByRegdate 메서드 작성
+        (2) 검색 시작 시간 기준, 끝 시간 기준을 담고 있는 ListCommand 커맨드 객체 작성
+        (3) ListCommand 커맨드 객체의 from, to 변수에 @DateTimeFormat 어노테이션 붙임
+            (view 의 input 태그 스트링을 LocalDateTime 타입으로 변환하기 위한 추가설정)
+        (4) 해당 서비스와 뷰를 매핑하는 MemberListController 작성
+        (5) MemberListController 빈 설정을 ControllerConfig 설정 클래스에 추가
+        (6) JSTL 이 제공하는 날짜 형식 태그는 자바 8의 LocalDateTime 타입은 지원하지 않기 때문에
+        태그 파일을 사용해서 LocalDateTime 값을 지정한 형식으로 출력하도록 함 (WEB-INF/tags/formatDateTime.tag)
+        태그 부분 코드를 확실히 이해하지는 못했음.
+        (7) 뷰 작성 (memberList.jsp)
+
+    2. 위 코드에서 지정한 날짜 형식은 "yyyyMMddHH" 이기 때문에
+    뷰에서 "20220420" 처럼"yyyyMMdd" 부분만 입력하면 지정한 형식과 일치하지 않게 됨. 이 때 400 에러가 뜨기 때문에
+    에러 처리를 해줘야 한다.
+        (1) MemberListController 에서 Error 처리를 해줌.
+        (2) label.properties 에 에러 메시지 작성
+        (3) 뷰 페이지 (memberList.jsp) 에 <form:errors> 태그로 에러 메시지 출력 부분 추가
+
+    3. @DateTimeFormat 어노테이션을 사용하면 지정한 형식의 문자열을 LocalDateTime 타입으로 변환한다는 것은 확인함.
+    누가 이 과정을 하는가? -> WebDataBinder
+
+    상세 설명
+        요청 매핑 어노테이션 적용 메서드와 DispatcherServlet 사이를 연결하기 위해 RequestMappingHandlerAdapter 객체를 사용
+        이 객체가 요청 파라미터와 커맨드 객체 사이의 변환 처리를 위해 WebDataBinder 를 사용.
+        WebDataBinder 는 직접 타입을 변환하지 않고 ConversionService 에 역할을 위임.
+        이 ConversionService 는 @EnableWebMvc 어노테이션을 사용하면
+        DefaultFormattingConversionService 를 ConversionService 로 사용함.
+
+        이 DefaultFormattingConversionService 가 @DateTimeFormat 어노테이션을 사용한 시간 관련 타입 변환 기능을 제공한다.
+
+
