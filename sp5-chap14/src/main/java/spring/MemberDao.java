@@ -168,21 +168,16 @@ public class MemberDao {
             LocalDateTime from, LocalDateTime to) {
         List<Member> results = jdbcTemplate.query(
                 "select * from MEMBER where REGDATE between ? and ?" + "order by REGDATE desc",
-                new RowMapper<Member>() {
-                    @Override
-                    public Member mapRow(ResultSet rs, int rowNum) throws SQLException {
-                        Member member = new Member(
-                                rs.getString("EMAIL"),
-                                rs.getString("PASSWORD"),
-                                rs.getString("NAME"),
-                                rs.getTimestamp("REGDATE").toLocalDateTime()
-                        );
-                        member.setId(rs.getLong("ID"));
-                        return member;
-                    }
-                }, from, to);
-
+                new MemberRowMapper(), from, to);
         return results;
     }
 
+    public Member selectById(Long memId) {
+        List<Member> results = jdbcTemplate.query(
+                "select * from MEMBER where ID = ?",
+                new MemberRowMapper(), memId);
+
+        return results.isEmpty() ? null : results.get(0);
+
+    }
 }
